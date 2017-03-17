@@ -1,0 +1,86 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Socket.IO chat</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font: 13px Helvetica, Arial; }
+      form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
+      form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
+      form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+      #messages { list-style-type: none; margin: 0; padding: 0; }
+      #messages li { padding: 5px 10px; }
+      /*#messages li:nth-child(odd) { background: #eee; }
+      #messages li.bot{
+        background: #c1ba88;
+      }*/
+    </style>
+  </head>
+  <body>
+    <ul id="messages"></ul>
+    <form action="">
+      <input id="m" autocomplete="off" /><button>Send</button>
+    </form>
+    <script>
+        var users = {}
+        function ranNum(min,max){
+            var mi = min?min: 0;
+            var ma = max?max: 5;
+            return Math.floor(Math.random()*(ma-mi)+mi);
+        }
+        function User(ext){
+            this.bgcolor = ("rgba("+ranNum(0,255)+","+ranNum(0,255)+", "+ranNum(0,255)+","+(ranNum(15,55)/100).toString()+")").toString();
+            if(ext && typeof(ext)=="string"){
+              this.name = ext;
+            }else{
+              this.name = "User" + userCount++;
+            }
+        }
+        function RegisterUser(id){
+            var user = users[id];
+            if(!user){
+                user = new User();
+                users[id] = user;
+            }
+            return user;
+        }
+        var colors = ["#a388c1","#8892c1","#8897c1","#88c1a7","#88c19a","#bbc188"];
+        var socket = io();
+        /*socket.onopen = function(){
+            console.log("Connection established.");
+        }
+        socket.onerror = function(){
+            console.log("Connection Error.");
+        }
+        socket.onclose = function(){
+            console.log("Connection closing.");
+        }*/
+        var myNum = ranNum(0,10000000);
+        var userCount = 1;
+        users[myNum] =  new User("Me");
+        var color = users[myNum].color;
+        socket.emit('start',{id:myNum});
+        socket.on('chat message', function(data){
+            //console.log("Reciving data.");
+            var u = RegisterUser(data.id);
+            var cm = $('<li>');
+            cm.text(u.name + ": "+data.msg);
+            cm.addClass("bot");
+            cm.css("background",u.bgcolor);
+            $('#messages').append(cm);
+            window.scroll($('#messages'),10E10);
+        });
+
+        $('form').submit(function(){
+            var msg = $('#m').val();
+            socket.emit('chat message',{id:myNum,message:msg});
+            //$('#messages').append($('<li>').text("user: "+msg));
+            console.log(msg);
+            $('#m').val('');
+            return false;
+        });
+    </script>
+  </body>
+</html>
